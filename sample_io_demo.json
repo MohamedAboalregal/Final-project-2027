@@ -1,0 +1,94 @@
+{
+  "demo_metadata": {
+    "project": "MediCare AI (VoxMedAI Extension)",
+    "pipeline_version": "v2.0.0-medicare-mvp",
+    "purpose": "Phase 1 End-to-End Prompt & Schema Demonstration (Synthetic Case)"
+  },
+  "step_1_raw_arabic_stt_input": "المريض كريم حسن 55 سنه جاي يشتكي من قلم في الصدر بقاله يومين ونهجان مع المجهود.. عنده هيبرتنشن قديم وبياخد كونكور 5 مللي مره الصبح، وكان ماشي على اسبرين بس وقفه من اسبوعين عشان معدته وجعته.. مفيش سخونيه ولا كحه.. وعنده حساسيه شديده من البنسلين.. الضغط 150 على 95 والنبض 92.",
+  "step_2_structured_extraction_output": {
+    "patient_name": "Karim Hassan",
+    "patient_age": 55,
+    "chief_complaint": "Chest pain and exertional dyspnea",
+    "symptom_duration": "2 days",
+    "symptoms": [
+      "Chest pain",
+      "Exertional dyspnea"
+    ],
+    "medical_history": {
+      "conditions": [
+        "Hypertension"
+      ],
+      "denied_conditions": [
+        "Fever",
+        "Cough"
+      ]
+    },
+    "surgical_history": [],
+    "current_medications": [
+      {
+        "trade_name": "Concor",
+        "generic_name": "Bisoprolol",
+        "dosage": "5 mg",
+        "frequency": "Once daily (morning)",
+        "route": "Oral",
+        "indication": "Hypertension"
+      }
+    ],
+    "stopped_medications": [
+      {
+        "trade_name": "Aspirin",
+        "generic_name": "Acetylsalicylic acid",
+        "dosage": null,
+        "frequency": null,
+        "route": "Oral",
+        "indication": null,
+        "stopped_reason": "Discontinued 2 weeks ago due to gastric irritation/epigastric pain"
+      }
+    ],
+    "allergy_status": "confirmed_present",
+    "allergies": [
+      "Penicillin"
+    ],
+    "social_history": [],
+    "vitals": {
+      "blood_pressure": "150/95 mmHg",
+      "heart_rate": "92 bpm",
+      "respiratory_rate": null,
+      "temperature": null,
+      "spo2": null
+    },
+    "dictated_assessment_and_plan": null,
+    "safety_triage_flags": [
+      "High cardiovascular risk combination: Age > 50 (55y) + acute chest pain + history of hypertension + recent discontinuation of antiplatelet therapy (Aspirin). Requires immediate clinician triage."
+    ],
+    "low_confidence_segments": []
+  },
+  "step_3_rag_evidence_draft_output": {
+    "clinical_report": "**Draft Status & Disclaimer**: Assistive AI-generated clinical draft. Requires review and sign-off by a qualified clinician before clinical use.\n\n**Patient Details & Chief Complaint**: Karim Hassan, 55-year-old male presenting with a 2-day history of chest pain and exertional dyspnea.\n\n**Medical & Surgical History**: Known history of Hypertension. Relevant Negatives: Explicitly denies fever and cough. Surgical History: Not Provided.\n\n**Allergies**: Confirmed Penicillin allergy.\n\n**Current & Stopped Medications**:\n- Current: Bisoprolol (Concor) 5 mg PO once daily.\n- Stopped: Acetylsalicylic acid (Aspirin) discontinued 2 weeks ago due to reported gastric discomfort.\n\n**Recorded Vitals**: BP 150/95 mmHg, HR 92 bpm. Respiratory Rate: Not Provided. Temperature: Not Provided. SpO2: Not Provided.\n\n**Evidence-Informed Draft Assessment**: 55-year-old hypertensive male with subacute chest pain and exertional dyspnea following recent Aspirin cessation. Per acute chest pain evaluation guidelines [Source: OHCM-11ed-p112], immediate 12-lead ECG and serial cardiac troponin measurements are indicated to rule out Acute Coronary Syndrome (ACS). Elevated blood pressure (150/95 mmHg) and borderline tachycardia warrant close hemodynamic monitoring [Source: ESC-HTN-2024-sec4].",
+    "action_plan": "- **Urgent Triage**: Prompt clinician evaluation for suspected ACS given age, hypertension, and recent antiplatelet withdrawal.\n- **Missing Vitals**: Record baseline SpO2, Respiratory Rate, and Temperature.\n- **Diagnostic Discussion Prompts**: 12-lead ECG within 10 minutes of arrival and high-sensitivity Troponin I/T [Source: OHCM-11ed-p112].\n- **Allergy Safety Alert**: Documented Penicillin allergy; avoid beta-lactam antibiotics if antimicrobial therapy is considered.",
+    "cited_source_ids": [
+      "OHCM-11ed-p112",
+      "ESC-HTN-2024-sec4"
+    ],
+    "missing_data_flags": [
+      "Respiratory rate not provided",
+      "Body temperature not provided",
+      "SpO2 not provided",
+      "Aspirin previous dosage not provided"
+    ]
+  },
+  "step_4_critic_validation_output": {
+    "is_approved_by_critic": true,
+    "requires_human_attention": true,
+    "unsupported_claims": [],
+    "contradictions_or_safety_conflicts": [
+      "High-priority clinical alert: Recent Aspirin discontinuation alongside active chest pain requires immediate physician review."
+    ],
+    "missing_mandatory_fields": [
+      "vitals.respiratory_rate",
+      "vitals.spo2",
+      "vitals.temperature"
+    ],
+    "revision_instructions": null
+  }
+}

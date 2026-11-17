@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MediCare AI — Healthcare & Blood-Bank Coordination Platform</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  body {
+    font-family: 'Plus Jakarta Sans', 'Cairo', sans-serif;
+    background-color: #F4F7FA;
+    color: #0F172A;
+  }
+  .rtl-mode {
+    direction: rtl;
+    font-family: 'Cairo', 'Plus Jakarta Sans', sans-serif;
+  }
+  .glass-card {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
+  }
+  .nav-active {
+    background-color: #CCFBF1;
+    color: #0F766E;
+    font-weight: 600;
+  }
+  @keyframes pulse-ring {
+    0% { transform: scale(0.95); opacity: 0.8; }
+    50% { transform: scale(1.15); opacity: 0.3; }
+    100% { transform: scale(0.95); opacity: 0.8; }
+  }
+  .recording-pulse {
+    animation: pulse-ring 1.5s infinite ease-in-out;
+  }
+</style>
+</head>
+<body class="antialiased selection:bg-teal-100 selection:text-teal-900">
+
+  <!-- Prototype Academic Disclaimer Banner -->
+  <div class="bg-slate-900 text-slate-200 text-xs py-1.5 px-4 flex flex-wrap items-center justify-between gap-2">
+    <div class="flex items-center gap-2">
+      <span class="inline-block w-2 h-2 rounded-full bg-teal-400"></span>
+      <span id="disclaimer-text"><strong>Academic Evaluation Prototype:</strong> Not a certified medical device. All AI outputs require qualified clinician review.</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <span class="text-slate-400 hidden sm:inline">Role:</span>
+      <select id="role-switcher" onchange="switchRole(this.value)" class="bg-slate-800 text-teal-300 border border-slate-700 rounded px-2 py-0.5 text-xs focus:outline-none">
+        <option value="clinician">Clinician (Dr. Ahmed)</option>
+        <option value="patient">Patient / Donor (Mohamed)</option>
+        <option value="staff">Blood-Bank Staff (Tanta Central)</option>
+      </select>
+      <button onclick="toggleLanguage()" id="lang-btn" class="bg-teal-700 hover:bg-teal-600 text-white px-2.5 py-0.5 rounded text-xs font-medium transition">
+        عربي / EN
+      </button>
+    </div>
+  </div>
+
+  <div class="flex h-[calc(100vh-34px)] overflow-hidden">
+    <!-- Sidebar (Desktop) -->
+    <aside id="sidebar" class="hidden md:flex md:flex-col w-64 bg-white border-e border-slate-200 justify-between">
+      <div>
+        <!-- Brand -->
+        <div class="h-16 flex items-center gap-3 px-6 border-b border-slate-100">
+          <div class="w-9 h-9 rounded-xl bg-teal-600 flex items-center justify-center text-white shadow-sm">
+            <i data-lucide="activity" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h1 class="font-bold text-slate-900 text-lg leading-none">MediCare <span class="text-teal-600">AI</span></h1>
+            <p class="text-[11px] text-slate-400 mt-0.5">VoxMedAI Clinical Extension</p>
+          </div>
+        </div>
+
+        <!-- Navigation Links -->
+        <nav class="p-3 space-y-1">
+          <button onclick="navigate('dashboard')" id="nav-dashboard" class="nav-item nav-active w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm transition">
+            <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+            <span data-i18n="nav_dashboard">Dashboard Overview</span>
+          </button>
+          <button onclick="navigate('ai-doc')" id="nav-ai-doc" class="nav-item text-slate-600 hover:bg-slate-50 w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm transition">
+            <i data-lucide="mic" class="w-4 h-4"></i>
+            <span data-i18n="nav_aidoc">AI Clinical Documentation</span>
+          </button>
+          <button onclick="navigate('records')" id="nav-records" class="nav-item text-slate-600 hover:bg-slate-50 w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm transition">
+            <i data-lucide="folder-heart" class="w-4 h-4"></i>
+            <span data-i18n="nav_records">Patient Health Record</span>
+          </button>
+          <button onclick="navigate('medications')" id="nav-medications" class="nav-item text-slate-600 hover:bg-slate-50 w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm transition">
+            <i data-lucide="pill" class="w-4 h-4"></i>
+            <span data-i18n="nav_meds">Medications & Adherence</span>
+          </button>
+          <button onclick="navigate('blood-bank')" id="nav-blood-bank" class="nav-item text-slate-600 hover:bg-slate-50 w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm transition">
+            <i data-lucide="droplet" class="w-4 h-4 text-rose-500"></i>
+            <span data-i18n="nav_blood">Blood Bank & Donors</span>
+          </button>
+          <button onclick="navigate('audit')" id="nav-audit" class="nav-item text-slate-600 hover:bg-slate-50 w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm transition">
+            <i data-lucide="shield-check" class="w-4 h-4"></i>
+            <span data-i18n="nav_audit">Consent & Audit Log</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- User Profile Card -->
+      <div class="p-4 border-t border-slate-100">
+        <div class="bg-slate-50 rounded-xl p-3 flex items-center gap-3">
+          <div class="w-9 h-9 rounded-full bg-teal-100 text-teal-700 font-bold flex items-center justify-center text-sm" id="user-avatar">DR</div>
+          <div class="overflow-hidden">
+            <p class="text-sm font-semibold text-slate-800 truncate" id="user-name">Dr. Ahmed Mansour</p>
+            <p class="text-xs text-slate-500 truncate" id="user-role-label">Verified Clinician • Internal Med</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <!-- Top Header -->
+      <header class="h-16 bg-white border-b border-slate-200 px-4 md:px-8 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <button onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100">
+            <i data-lucide="menu" class="w-5 h-5"></i>
+          </button>
+          <h2 id="page-title" class="text-lg font-bold text-slate-800">Dashboard Overview</h2>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <!-- Emergency Notice Pill -->
+          <button onclick="openModal('emergency-modal')" class="hidden sm:flex items-center gap-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-3 py-1.5 rounded-full text-xs font-semibold transition">
+            <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
+            <span data-i18n="urgent_notice">Emergency Protocol</span>
+          </button>
+
+          <!-- Notifications Button -->
+          <button onclick="toggleNotifications()" class="relative p-2 rounded-full text-slate-600 hover:bg-slate-100 transition">
+            <i data-lucide="bell" class="w-5 h-5"></i>
+            <span id="notif-badge" class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500"></span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Mobile Drawer -->
+      <div id="mobile-drawer" class="hidden fixed inset-0 z-50 bg-slate-900/50 md:hidden" onclick="toggleMobileMenu()">
+        <div class="w-64 h-full bg-white p-4 space-y-2" onclick="event.stopPropagation()">
+          <div class="flex items-center justify-between pb-3 border-b">
+            <span class="font-bold text-teal-700">MediCare AI</span>
+            <button onclick="toggleMobileMenu()"><i data-lucide="x" class="w-5 h-5"></i></button>
+          </div>
+          <button onclick="navigate('dashboard'); toggleMobileMenu()" class="w-full text-start px-3 py-2 rounded-lg text-sm font-medium hover:bg-teal-50">Dashboard Overview</button>
+          <button onclick="navigate('ai-doc'); toggleMobileMenu()" class="w-full text-start px-3 py-2 rounded-lg text-sm font-medium hover:bg-teal-50">AI Clinical Documentation</button>
+          <button onclick="navigate('records'); toggleMobileMenu()" class="w-full text-start px-3 py-2 rounded-lg text-sm font-medium hover:bg-teal-50">Patient Health Record</button>
+          <button onclick="navigate('medications'); toggleMobileMenu()" class="w-full text-start px-3 py-2 rounded-lg text-sm font-medium hover:bg-teal-50">Medications & Adherence</button>
+          <button onclick="navigate('blood-bank'); toggleMobileMenu()" class="w-full text-start px-3 py-2 rounded-lg text-sm font-medium hover:bg-teal-50">Blood Bank & Donors</button>
+          <button onclick="navigate('audit'); toggleMobileMenu()" class="w-full text-start px-3 py-2 rounded-lg text-sm font-medium hover:bg-teal-50">Consent & Audit Log</button>
+        </div>
+      </div>
+
+      <!-- Notifications Slide-over -->
+      <div id="notif-panel" class="hidden fixed top-24 right-4 z-40 w-80 sm:w-96 glass-card rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+        <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+          <h3 class="font-bold text-sm text-slate-800">Notifications & Alerts</h3>
+          <button onclick="toggleNotifications()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-4 h-4"></i></button>
+        </div>
+        <div class="divide-y divide-slate-100 max-h-80 overflow-y-auto" id="notif-list">
+          <div class="p-3.5 hover:bg-slate-50 transition">
+            <div class="flex items-center justify-between text-xs text-teal-700 font-semibold mb-1">
+              <span>Blood Request #BR-409</span>
+              <span class="text-slate-400 font-normal">12m ago</span>
+            </div>
+            <p class="text-xs text-slate-600">Tanta University Hospital confirmed availability for 2 units of O- Red Cells (Hold expires in 45 mins).</p>
+          </div>
+          <div class="p-3.5 hover:bg-slate-50 transition">
+            <div class="flex items-center justify-between text-xs text-amber-700 font-semibold mb-1">
+              <span>AI Draft Pending Review</span>
+              <span class="text-slate-400 font-normal">38m ago</span>
+            </div>
+            <p class="text-xs text-slate-600">Patient #PT-102 voice dictation transcribed. Critic flagged 1 missing allergy confirmation.</p>
+          </div>
+          <div class="p-3.5 hover:bg-slate-50 transition">
+            <div class="flex items-center justify-between text-xs text-blue-700 font-semibold mb-1">
+              <span>Medication Reminder</span>
+              <span class="text-slate-400 font-normal">1h ago</span>
+            </div>
+            <p class="text-xs text-slate-600">Scheduled dose reminder dispatched (clinical details hidden for privacy).</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scrollable View Container -->
+      <main class="flex-1 overflow-y-auto p-4 md:p-8 space-y-6">
+
+        <!-- ==================== 1. DASHBOARD VIEW ==================== -->
+        <section id="view-dashboard" class="space-y-6">
+          <!-- KPI Stats -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="glass-card rounded-2xl p-5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-500 uppercase">Drafts Pending Review</span>
+                <span class="p-2 rounded-lg bg-teal-50 text-teal-600"><i data-lucide="file-check-2" class="w-4 h-4"></i></span>
+              </div>
+              <div class="mt-3 flex items-baseline gap-2">
+                <span class="text-2xl font-bold text-slate-900" id="kpi-drafts">3</span>
+                <span class="text-xs text-amber-600 font-medium">Human review mandatory</span>
+              </div>
+            </div>
+
+            <div class="glass-card rounded-2xl p-5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-500 uppercase">Medication Adherence</span>
+                <span class="p-2 rounded-lg bg-blue-50 text-blue-600"><i data-lucide="check-circle-2" class="w-4 h-4"></i></span>
+              </div>
+              <div class="mt-3 flex items-baseline gap-2">
+                <span class="text-2xl font-bold text-slate-900" id="kpi-adherence">86%</span>
+                <span class="text-xs text-emerald-600 font-medium">+4% this week</span>
+              </div>
+            </div>
+
+            <div class="glass-card rounded-2xl p-5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-500 uppercase">Active Blood Requests</span>
+                <span class="p-2 rounded-lg bg-rose-50 text-rose-600"><i data-lucide="droplet" class="w-4 h-4"></i></span>
+              </div>
+              <div class="mt-3 flex items-baseline gap-2">
+                <span class="text-2xl font-bold text-slate-900" id="kpi-requests">2</span>
+                <span class="text-xs text-slate-500">1 Confirmed • 1 Searching</span>
+              </div>
+            </div>
+
+            <div class="glass-card rounded-2xl p-5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-500 uppercase">Active Consents</span>
+                <span class="p-2 rounded-lg bg-indigo-50 text-indigo-600"><i data-lucide="lock" class="w-4 h-4"></i></span>
+              </div>
+              <div class="mt-3 flex items-baseline gap-2">
+                <span class="text-2xl font-bold text-slate-900">4</span>
+                <span class="text-xs text-slate-500">Time-limited & revocable</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Action Cards -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Recent AI Drafts -->
+            <div class="lg:col-span-2 glass-card rounded-2xl p-5">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h3 class="font-bold text-slate-800">Clinical Drafts Awaiting Clinician Sign-Off</h3>
+                  <p class="text-xs text-slate-500">Generated via Whisper STT + Curated RAG + Critic Validation</p>
+                </div>
+                <button onclick="navigate('ai-doc')" class="text-xs font-semibold text-teal-600 hover:text-teal-700 flex items-center gap-1">
+                  Open Workspace <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+              <div class="space-y-3">
+                <div class="p-3.5 rounded-xl border border-slate-200 hover:border-teal-300 transition flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <span class="font-semibold text-sm text-slate-800">Case #PT-102 — Sara Mahmoud (34F)</span>
+                      <span class="px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-100 text-amber-800">Needs Review</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-1">Arabic/English Dictation • Chief Complaint: Persistent dry cough & mild dyspnea (5 days)</p>
+                  </div>
+                  <button onclick="navigate('ai-doc')" class="bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition">
+                    Review Draft
+                  </button>
+                </div>
+
+                <div class="p-3.5 rounded-xl border border-slate-200 hover:border-teal-300 transition flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <span class="font-semibold text-sm text-slate-800">Case #PT-089 — Karim Hassan (52M)</span>
+                      <span class="px-2 py-0.5 rounded-full text-[11px] font-medium bg-rose-100 text-rose-800">Critic Flag: Allergy Conflict</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-1">Typed Notes • History of Penicillin allergy detected against suggested reference passage</p>
+                  </div>
+                  <button onclick="navigate('ai-doc')" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition">
+                    Inspect Flag
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Live Blood Availability Snapshot -->
+            <div class="glass-card rounded-2xl p-5 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-3">
+                  <h3 class="font-bold text-slate-800">Nearby Blood Inventory</h3>
+                  <span class="text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium">TEST DATA</span>
+                </div>
+                <p class="text-xs text-slate-500 mb-4">Freshness-verified facility reports (Gharbia Region)</p>
+                <div class="space-y-3">
+                  <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                    <div class="flex items-center justify-between">
+                      <span class="font-semibold text-xs text-slate-800">Tanta University Blood Bank</span>
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">AVAILABLE (O-)</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 mt-1">Last verified: 14 mins ago by Staff #41</p>
+                  </div>
+                  <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                    <div class="flex items-center justify-between">
+                      <span class="font-semibold text-xs text-slate-800">El-Mahalla General Hospital</span>
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">STALE (&gt;6h)</span>
+                    </div>
+                    <p class="text-[11px] text-amber-700 mt-1">⚠ Last verified: 7 hours ago — Call to confirm</p>
+                  </div>
+                </div>
+              </div>
+              <button onclick="navigate('blood-bank')" class="mt-4 w-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold py-2.5 rounded-xl transition">
+                Search Blood & Coordinate
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== 2. AI CLINICAL DOCUMENTATION VIEW ==================== -->
+        <section id="view-ai-doc" class="hidden space-y-5">
+          <!-- Assistive Warning Banner -->
+          <div class="bg-amber-50 border border-amber-200 rounded-xl p-3.5 flex items-start gap-3">
+            <i data-lucide="info" class="w-5 h-5 text-amber-600 shrink-0 mt-0.5"></i>
+            <div class="text-xs text-amber-900">
+              <strong>Assistive Clinical Draft Only:</strong> Generated outputs are linked to curated reference passages and checked by a Critic stage. Missing data is explicitly marked as <em>"Not Provided"</em>. Clinician approval is mandatory before saving to the patient record.
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Left Column: Audio / Text Intake & Transcript Correction -->
+            <div class="lg:col-span-5 glass-card rounded-2xl p-5 space-y-4">
+              <div class="flex items-center justify-between">
+                <h3 class="font-bold text-slate-800 text-sm">1. Voice / Text Intake (AR / EN)</h3>
+                <span class="text-[11px] font-mono bg-slate-100 text-slate-600 px-2 py-0.5 rounded">Whisper-v3-Med</span>
+              </div>
+
+              <!-- Recorder Box -->
+              <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center space-y-3">
+                <button id="record-btn" onclick="toggleRecording()" class="mx-auto w-14 h-14 rounded-full bg-teal-600 hover:bg-teal-700 text-white flex items-center justify-center shadow-md transition">
+                  <i data-lucide="mic" class="w-6 h-6"></i>
+                </button>
+                <div>
+                  <p id="record-status" class="text-xs font-semibold text-slate-700">Click to Simulate Clinician Dictation</p>
+                  <p class="text-[11px] text-slate-400">Supports Egyptian Arabic + English medical terms</p>
+                </div>
+              </div>
+
+              <!-- Human Transcript Correction (FR-07) -->
+              <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                  <label class="text-xs font-bold text-slate-700">Transcript (Human Correction Required)</label>
+                  <span class="text-[11px] text-teal-700 font-medium">Editable • Versioned</span>
+                </div>
+                <textarea id="transcript-box" rows="5" class="w-full rounded-xl border border-slate-300 p-3 text-xs text-slate-800 focus:ring-2 focus:ring-teal-500 focus:outline-none leading-relaxed">المريضة سارة محمود ٣٤ سنة، بتشتكي من كحة ناشفة بقى لها ٥ أيام مع نهجان خفيف مع المجهود. مفيش سخونية أو ألم في الصدر. بتاخد Ventolin inhaler عند اللزوم وعندها حساسية من Penicillin. الضغط ١٢٠ على ٨٠ والنبض ٨٢.</textarea>
+                <div class="flex items-center justify-between text-[11px] text-slate-500">
+                  <span>Low-confidence segments: <strong class="text-emerald-600">0 flagged</strong></span>
+                  <button onclick="runExtractionPipeline()" class="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-3.5 py-1.5 rounded-lg transition flex items-center gap-1.5">
+                    <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Generate Validated Draft
+                  </button>
+                </div>
+              </div>
+
+              <!-- Pipeline Status Stepper -->
+              <div class="border-t border-slate-100 pt-3 space-y-2">
+                <p class="text-[11px] font-bold text-slate-500 uppercase">Pipeline Provenance</p>
+                <div class="grid grid-cols-3 gap-2 text-center text-[11px]">
+                  <div class="p-2 rounded-lg bg-emerald-50 text-emerald-800 font-medium">✓ Schema Validated</div>
+                  <div class="p-2 rounded-lg bg-emerald-50 text-emerald-800 font-medium">✓ Top-3 RAG Cited</div>
+                  <div class="p-2 rounded-lg bg-amber-50 text-amber-800 font-medium" id="critic-badge">⚠ 1 Critic Note</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Column: Structured Clinical Draft & Critic Review -->
+            <div class="lg:col-span-7 glass-card rounded-2xl p-5 space-y-4">
+              <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h3 class="font-bold text-slate-800 text-sm">2. Structured Clinical Draft</h3>
+                    <span id="draft-status-pill" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800">STATUS: DRAFT</span>
+                  </div>
+                  <p class="text-[11px] text-slate-400 mt-0.5">Model: Llama-3-Med-RAG v1.2 • Prompt: clinical_extract_v4</p>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button onclick="approveDraft('rejected')" class="px-3 py-1.5 rounded-lg border border-rose-200 text-rose-700 hover:bg-rose-50 text-xs font-semibold transition">Reject</button>
+                  <button onclick="approveDraft('approved')" class="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition flex items-center gap-1">
+                    <i data-lucide="check" class="w-3.5 h-3.5"></i> Clinician Approve
+                  </button>
+                </div>
+              </div>
+
+              <!-- Structured Fields -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                  <span class="text-[10px] font-bold text-slate-400 uppercase">Chief Complaint & Duration</span>
+                  <p class="font-semibold text-slate-800 mt-1" id="draft-cc">Dry cough & mild exertional dyspnea (5 days)</p>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                  <span class="text-[10px] font-bold text-slate-400 uppercase">Recorded Vitals</span>
+                  <p class="font-semibold text-slate-800 mt-1" id="draft-vitals">BP: 120/80 mmHg • HR: 82 bpm • Temp: <span class="text-slate-400 italic">Not provided</span></p>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                  <span class="text-[10px] font-bold text-slate-400 uppercase">Relevant Negatives</span>
+                  <p class="font-semibold text-slate-800 mt-1">Confirmed absent: Fever, Chest pain</p>
+                </div>
+                <div class="p-3 rounded-xl bg-rose-50/70 border border-rose-200">
+                  <span class="text-[10px] font-bold text-rose-600 uppercase">Confirmed Allergies</span>
+                  <p class="font-bold text-rose-900 mt-1">Penicillin (High Severity)</p>
+                </div>
+              </div>
+
+              <!-- Evidence-Linked Clinical Discussion -->
+              <div class="p-3.5 rounded-xl border border-teal-200 bg-teal-50/40 space-y-2 text-xs">
+                <div class="flex items-center justify-between">
+                  <span class="font-bold text-teal-900">Evidence-Informed Assessment Notes</span>
+                  <button onclick="openModal('citation-modal')" class="text-[11px] bg-white border border-teal-200 text-teal-700 px-2 py-0.5 rounded font-semibold hover:bg-teal-50">
+                    [Source: GINA-2025 §3.2]
+                  </button>
+                </div>
+                <p class="text-slate-700 leading-relaxed">
+                  Subacute dry cough with exertional dyspnea in a patient using PRN Salbutamol (Ventolin) warrants spirometry/peak-flow evaluation to assess airway hyperresponsiveness. <strong>Safety Note:</strong> Avoid beta-lactam/penicillin empiric therapy if bacterial etiology is later suspected.
+                </p>
+              </div>
+
+              <!-- Critic Validation Box -->
+              <div class="p-3 rounded-xl bg-slate-900 text-slate-200 text-xs space-y-1">
+                <div class="flex items-center justify-between">
+                  <span class="font-bold text-teal-400">Critic Agent Verification Report</span>
+                  <span class="text-[10px] text-slate-400">Pass 1/2</span>
+                </div>
+                <p class="text-slate-300">• Grounding check: All clinical statements mapped to curated reference IDs.</p>
+                <p class="text-amber-300">• Missing data check: Respiratory rate (RR) and SpO2 not dictated — flagged as missing, not inferred.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== 3. PATIENT HEALTH RECORD VIEW ==================== -->
+        <section id="view-records" class="hidden space-y-6">
+          <div class="glass-card rounded-2xl p-6">
+            <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
+              <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-teal-600 text-white font-bold flex items-center justify-center text-lg">SM</div>
+                <div>
+                  <h3 class="font-bold text-slate-900 text-base">Sara Mahmoud — Longitudinal Health Record</h3>
+                  <p class="text-xs text-slate-500">Patient ID: #PT-102 • DOB: 14 May 1992 (34y) • Blood Group: <span class="font-bold text-rose-600">O- (Verified)</span></p>
+                </div>
+              </div>
+              <button onclick="openModal('share-modal')" class="bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold px-4 py-2 rounded-xl flex items-center gap-2 transition">
+                <i data-lucide="share-2" class="w-4 h-4"></i> Consent-Controlled Share
+              </button>
+            </div>
+
+            <!-- Provenance Legend -->
+            <div class="mt-4 flex flex-wrap gap-2 text-[11px]">
+              <span class="px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 font-medium border border-emerald-200">✓ Clinician-Verified</span>
+              <span class="px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 font-medium border border-blue-200">Patient-Entered</span>
+              <span class="px-2.5 py-1 rounded-md bg-purple-50 text-purple-700 font-medium border border-purple-200">AI-Extracted (Approved)</span>
+            </div>
+
+            <!-- Structured History Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
+              <div class="p-4 rounded-xl border border-slate-200 space-y-2">
+                <h4 class="font-bold text-xs text-slate-500 uppercase">Conditions & History</h4>
+                <div class="p-2.5 rounded-lg bg-slate-50 text-xs">
+                  <p class="font-semibold text-slate-800">Mild Intermittent Asthma</p>
+                  <p class="text-[11px] text-emerald-700 mt-0.5">✓ Clinician-Verified • 2024-11-10</p>
+                </div>
+                <div class="p-2.5 rounded-lg bg-slate-50 text-xs">
+                  <p class="font-semibold text-slate-800">Appendectomy (2015)</p>
+                  <p class="text-[11px] text-blue-700 mt-0.5">Patient-Entered • Confirmed</p>
+                </div>
+              </div>
+
+              <div class="p-4 rounded-xl border border-slate-200 space-y-2">
+                <h4 class="font-bold text-xs text-slate-500 uppercase">Allergies (Distinct States)</h4>
+                <div class="p-2.5 rounded-lg bg-rose-50 border border-rose-100 text-xs">
+                  <p class="font-bold text-rose-900">Penicillin — Skin Rash / Urticaria</p>
+                  <p class="text-[11px] text-rose-700 mt-0.5">✓ Clinician-Verified</p>
+                </div>
+                <div class="p-2.5 rounded-lg bg-slate-50 text-xs">
+                  <p class="font-semibold text-slate-700">Latex Allergy: <span class="text-slate-500">Confirmed Absent</span></p>
+                  <p class="text-[11px] text-slate-400 mt-0.5">Food Allergies: Unknown / Not Provided</p>
+                </div>
+              </div>
+
+              <div class="p-4 rounded-xl border border-slate-200 space-y-2">
+                <h4 class="font-bold text-xs text-slate-500 uppercase">Private Uploaded Files</h4>
+                <div class="p-2.5 rounded-lg bg-slate-50 flex items-center justify-between text-xs">
+                  <div>
+                    <p class="font-semibold text-slate-800">CBC_Lab_Oct2026.pdf</p>
+                    <p class="text-[10px] text-slate-400">Signed URL • Expires in 15m</p>
+                  </div>
+                  <i data-lucide="file-text" class="w-4 h-4 text-teal-600"></i>
+                </div>
+                <div class="p-2.5 rounded-lg bg-slate-50 flex items-center justify-between text-xs">
+                  <div>
+                    <p class="font-semibold text-slate-800">Chest_XRay_Frontal.png</p>
+                    <p class="text-[10px] text-amber-600">Stretch Assistive View Only</p>
+                  </div>
+                  <i data-lucide="image" class="w-4 h-4 text-teal-600"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== 4. MEDICATIONS & ADHERENCE VIEW ==================== -->
+        <section id="view-medications" class="hidden space-y-6">
+          <div class="glass-card rounded-2xl p-6">
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-5">
+              <div>
+                <h3 class="font-bold text-slate-900 text-base">Medication Schedule & Adherence Tracking</h3>
+                <p class="text-xs text-slate-500">Log daily doses (Taken, Postponed, Missed). Reminders do not replace clinician instructions.</p>
+              </div>
+              <div class="flex items-center gap-3 bg-teal-50 px-4 py-2 rounded-xl border border-teal-100">
+                <span class="text-xs font-semibold text-teal-900">Weekly Adherence:</span>
+                <span class="text-lg font-bold text-teal-700" id="adherence-percent">86%</span>
+              </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden mb-6">
+              <div id="adherence-bar" class="bg-teal-600 h-full transition-all duration-300" style="width: 86%"></div>
+            </div>
+
+            <!-- Dose Cards -->
+            <div class="space-y-3" id="med-list">
+              <!-- Med 1 -->
+              <div class="p-4 rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold text-sm text-slate-900">Budesonide Inhaler 200 mcg</span>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800">Clinician Prescribed</span>
+                  </div>
+                  <p class="text-xs text-slate-500 mt-1">1 inhalation twice daily • Morning Dose: 08:00 AM</p>
+                </div>
+                <div class="flex items-center gap-2" id="med-actions-1">
+                  <button onclick="logDose(1, 'Taken')" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition">✓ Taken</button>
+                  <button onclick="logDose(1, 'Postponed')" class="px-3 py-1.5 rounded-lg bg-amber-100 text-amber-800 text-xs font-semibold hover:bg-amber-200 transition">Postpone</button>
+                  <button onclick="logDose(1, 'Missed')" class="px-3 py-1.5 rounded-lg bg-rose-100 text-rose-800 text-xs font-semibold hover:bg-rose-200 transition">Skip / Missed</button>
+                </div>
+              </div>
+
+              <!-- Med 2 -->
+              <div class="p-4 rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold text-sm text-slate-900">Vitamin D3 5000 IU</span>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-100 text-blue-800">Patient-Entered</span>
+                  </div>
+                  <p class="text-xs text-slate-500 mt-1">1 capsule after lunch • Scheduled: 03:00 PM</p>
+                </div>
+                <div class="flex items-center gap-2" id="med-actions-2">
+                  <button onclick="logDose(2, 'Taken')" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition">✓ Taken</button>
+                  <button onclick="logDose(2, 'Postponed')" class="px-3 py-1.5 rounded-lg bg-amber-100 text-amber-800 text-xs font-semibold hover:bg-amber-200 transition">Postpone</button>
+                  <button onclick="logDose(2, 'Missed')" class="px-3 py-1.5 rounded-lg bg-rose-100 text-rose-800 text-xs font-semibold hover:bg-rose-200 transition">Skip / Missed</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== 5. BLOOD BANK & DONOR COORDINATION VIEW ==================== -->
+        <section id="view-blood-bank" class="hidden space-y-6">
+          <!-- Safety Boundary Banner -->
+          <div class="bg-rose-50 border border-rose-200 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-start gap-3">
+              <i data-lucide="shield-alert" class="w-5 h-5 text-rose-600 shrink-0 mt-0.5"></i>
+              <div class="text-xs text-rose-900">
+                <strong>Operational Safety Boundary:</strong> Search results display facility-reported inventory with last-verified timestamps. Submission does <strong>not</strong> guarantee availability or reserve a unit. Cross-matching and donor eligibility remain strictly with qualified facility personnel.
+              </div>
+            </div>
+            <button onclick="openModal('donor-modal')" class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold px-3.5 py-2 rounded-xl transition shrink-0">
+              + Register as Opt-In Donor
+            </button>
+          </div>
+
+          <!-- Search Filters -->
+          <div class="glass-card rounded-2xl p-5">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+              <div>
+                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Blood Group</label>
+                <select id="filter-group" onchange="filterFacilities()" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold">
+                  <option value="ALL">All Blood Groups</option>
+                  <option value="O-" selected>O- (Universal Donor)</option>
+                  <option value="O+">O+</option>
+                  <option value="A+">A+</option>
+                  <option value="B+">B+</option>
+                  <option value="AB-">AB-</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Component</label>
+                <select id="filter-component" onchange="filterFacilities()" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold">
+                  <option value="ALL">All Components</option>
+                  <option value="Red Cells">Packed Red Cells</option>
+                  <option value="Platelets">Platelets</option>
+                  <option value="Plasma">Fresh Frozen Plasma</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Location / City</label>
+                <select id="filter-city" onchange="filterFacilities()" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold">
+                  <option value="ALL">Gharbia (All Cities)</option>
+                  <option value="Tanta">Tanta</option>
+                  <option value="El-Mahalla">El-Mahalla El-Kubra</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Freshness Filter</label>
+                <select id="filter-freshness" onchange="filterFacilities()" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold">
+                  <option value="ALL">Show Verified & Stale</option>
+                  <option value="FRESH">Fresh Verified Only (&lt;4h)</option>
+                </select>
+              </div>
+              <div class="flex items-end">
+                <button onclick="filterFacilities()" class="w-full bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold py-2.5 rounded-xl transition">
+                  Update Search
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Facility Results Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="facility-grid"></div>
+
+          <!-- Active Request Lifecycle Tracker -->
+          <div class="glass-card rounded-2xl p-5">
+            <h3 class="font-bold text-slate-800 text-sm mb-3">Active Blood Request Lifecycle (#BR-409)</h3>
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center text-xs">
+              <div class="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 font-semibold">1. Submitted</div>
+              <div class="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 font-semibold">2. Facility Contacted</div>
+              <div class="p-2.5 rounded-xl bg-teal-600 text-white font-bold shadow-sm">3. Availability Confirmed</div>
+              <div class="p-2.5 rounded-xl bg-slate-100 text-slate-500">4. Time-Limited Hold</div>
+              <div class="p-2.5 rounded-xl bg-slate-100 text-slate-500">5. Cross-Match & Release</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== 6. CONSENT & AUDIT LOG VIEW ==================== -->
+        <section id="view-audit" class="hidden space-y-6">
+          <div class="glass-card rounded-2xl p-6">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h3 class="font-bold text-slate-900 text-base">Immutable Append-Only Audit Trail</h3>
+                <p class="text-xs text-slate-500">Every record view, AI generation, inventory update, and consent grant/revocation is logged.</p>
+              </div>
+              <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-mono">OWASP API Security Aligned</span>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="border-b border-slate-200 text-slate-500 uppercase text-[11px]">
+                    <th class="py-2.5 px-3">Timestamp</th>
+                    <th class="py-2.5 px-3">Actor & Role</th>
+                    <th class="py-2.5 px-3">Action</th>
+                    <th class="py-2.5 px-3">Target Entity</th>
+                    <th class="py-2.5 px-3">Provenance / Metadata</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100" id="audit-table-body">
+                  <tr>
+                    <td class="py-3 px-3 font-mono text-slate-500">2026-11-17 00:12</td>
+                    <td class="py-3 px-3 font-semibold">Dr. Ahmed Mansour (Clinician)</td>
+                    <td class="py-3 px-3"><span class="px-2 py-0.5 rounded bg-teal-50 text-teal-700 font-medium">DRAFT_GENERATED</span></td>
+                    <td class="py-3 px-3">ClinicalReport #CR-881</td>
+                    <td class="py-3 px-3 text-slate-500">Whisper-v3 + GINA-2025 RAG</td>
+                  </tr>
+                  <tr>
+                    <td class="py-3 px-3 font-mono text-slate-500">2026-11-16 23:58</td>
+                    <td class="py-3 px-3 font-semibold">Staff #41 (Tanta Univ. BB)</td>
+                    <td class="py-3 px-3"><span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-medium">INVENTORY_VERIFIED</span></td>
+                    <td class="py-3 px-3">O- Red Cells (6 Units)</td>
+                    <td class="py-3 px-3 text-slate-500">Prev: 4 → New: 6 (Routine check)</td>
+                  </tr>
+                  <tr>
+                    <td class="py-3 px-3 font-mono text-slate-500">2026-11-16 23:40</td>
+                    <td class="py-3 px-3 font-semibold">Sara Mahmoud (Patient)</td>
+                    <td class="py-3 px-3"><span class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-medium">CONSENT_GRANTED</span></td>
+                    <td class="py-3 px-3">Share Record → Dr. Ahmed</td>
+                    <td class="py-3 px-3 text-slate-500">Expires in 24h • Revocable</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ==================== MODALS ==================== -->
+  <!-- Emergency Protocol Modal -->
+  <div id="emergency-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center gap-3 text-rose-600">
+        <i data-lucide="phone-call" class="w-6 h-6"></i>
+        <h3 class="font-bold text-lg">Emergency Medical & Blood Notice</h3>
+      </div>
+      <p class="text-xs text-slate-600 leading-relaxed">
+        MediCare AI is a coordination prototype and does <strong>not</strong> replace emergency medical services. In life-threatening situations or urgent surgical hemorrhage, contact Egyptian Ambulance Services (<strong>123</strong>) or proceed directly to the nearest emergency hospital immediately.
+      </p>
+      <button onclick="closeModal('emergency-modal')" class="w-full bg-rose-600 text-white font-semibold text-xs py-2.5 rounded-xl">Understood</button>
+    </div>
+  </div>
+
+  <!-- Blood Request Modal -->
+  <div id="request-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <h3 class="font-bold text-base text-slate-900">Submit Blood Coordination Request</h3>
+        <button onclick="closeModal('request-modal')"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <p class="text-xs text-slate-500" id="req-facility-label">Target Facility: Tanta University Blood Bank</p>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="font-semibold text-slate-700 block mb-1">Units Needed</label>
+          <input type="number" value="2" min="1" max="5" class="w-full border border-slate-300 rounded-lg px-3 py-2">
+        </div>
+        <div>
+          <label class="font-semibold text-slate-700 block mb-1">Urgency Level</label>
+          <select class="w-full border border-slate-300 rounded-lg px-3 py-2">
+            <option>Urgent (Within 6 hours)</option>
+            <option>Scheduled Surgery (24-48 hours)</option>
+          </select>
+        </div>
+        <div class="p-3 rounded-xl bg-amber-50 text-amber-900 text-[11px]">
+          ⚠ Submitting a request notifies authorized facility staff. Physical unit reservation requires staff confirmation and laboratory cross-matching.
+        </div>
+      </div>
+      <button onclick="submitBloodRequest()" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs py-2.5 rounded-xl">Confirm & Dispatch Request</button>
+    </div>
+  </div>
+
+  <!-- Donor Registration Modal -->
+  <div id="donor-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <h3 class="font-bold text-base text-slate-900">Opt-In Blood Donor Consent</h3>
+        <button onclick="closeModal('donor-modal')"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <p class="text-slate-600">Your phone number is <strong>never</strong> published publicly. Contact details are shared only when you explicitly accept a request.</p>
+        <div>
+          <label class="font-semibold text-slate-700 block mb-1">Self-Reported Blood Group (Unverified until screening)</label>
+          <select class="w-full border border-slate-300 rounded-lg px-3 py-2">
+            <option>O-</option><option>O+</option><option>A+</option><option>B+</option><option>AB+</option>
+          </select>
+        </div>
+        <label class="flex items-start gap-2 pt-1">
+          <input type="checkbox" checked class="mt-0.5 accent-teal-600">
+          <span class="text-[11px] text-slate-600">I consent to receive anonymized donation alerts and understand clinical eligibility is decided solely by blood-bank staff.</span>
+        </label>
+      </div>
+      <button onclick="closeModal('donor-modal'); showToast('Donor opt-in preference saved with explicit consent record.')" class="w-full bg-teal-600 text-white font-semibold text-xs py-2.5 rounded-xl">Save Donor Profile</button>
+    </div>
+  </div>
+
+  <!-- Citation Modal -->
+  <div id="citation-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-3 shadow-2xl text-xs">
+      <div class="flex items-center justify-between">
+        <h3 class="font-bold text-sm text-teal-800">Retrieved Evidence Passage</h3>
+        <button onclick="closeModal('citation-modal')"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+        <p class="font-bold text-slate-800">Source: Global Initiative for Asthma (GINA) Strategy Report 2025</p>
+        <p class="text-slate-500">Chunk ID: doc_gina25_p44_c2 • Ingestion Date: 2026-10-12</p>
+        <p class="text-slate-700 italic pt-2">"Patients presenting with intermittent dry cough and exertional dyspnea using short-acting beta2-agonists (SABA) alone should undergo objective lung function testing (spirometry or PEF) to confirm variable expiratory airflow limitation."</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Share Consent Modal -->
+  <div id="share-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl text-xs">
+      <div class="flex items-center justify-between">
+        <h3 class="font-bold text-sm text-slate-900">Time-Limited Report Sharing</h3>
+        <button onclick="closeModal('share-modal')"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <p class="text-slate-600">Generate a revocable, short-lived reference link for a named clinician. No raw medical data is embedded in the URL/QR token.</p>
+      <input type="text" placeholder="Recipient Clinician Email or ID" value="dr.ahmed@tanta-med.edu.eg" class="w-full border border-slate-300 rounded-lg px-3 py-2">
+      <select class="w-full border border-slate-300 rounded-lg px-3 py-2">
+        <option>Valid for 24 Hours (Revocable anytime)</option>
+        <option>Valid for 1 Hour (Single Visit)</option>
+      </select>
+      <button onclick="closeModal('share-modal'); showToast('Consent-controlled share link generated & logged in Audit Trail.')" class="w-full bg-teal-600 text-white font-semibold py-2.5 rounded-xl">Generate Secure Reference</button>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="hidden fixed bottom-5 right-5 z-50 bg-slate-900 text-white text-xs font-medium px-4 py-3 rounded-xl shadow-lg flex items-center gap-2">
+    <i data-lucide="check-circle" class="w-4 h-4 text-teal-400"></i>
+    <span id="toast-msg">Action completed</span>
+  </div>
+
+<script>
+  // Initialize Lucide icons
+  lucide.createIcons();
+
+  // Sample Facilities Data (FR-16, FR-17, FR-18)
+  const facilities = [
+    { name: "Tanta University Hospital Blood Bank", city: "Tanta", distance: "1.8 km", group: "O-", component: "Red Cells", units: 6, status: "AVAILABLE", verifiedAgo: "14 mins ago", fresh: true, label: "TEST DATA" },
+    { name: "El-Mahalla General Hospital Blood Center", city: "El-Mahalla", distance: "24.5 km", group: "O-", component: "Red Cells", units: 2, status: "STALE", verifiedAgo: "7 hours ago", fresh: false, label: "TEST DATA" },
+    { name: "Gharbia Regional Blood Transfusion Center", city: "Tanta", distance: "3.1 km", group: "A+", component: "Platelets", units: 4, status: "LOW", verifiedAgo: "42 mins ago", fresh: true, label: "TEST DATA" },
+    { name: "El-Mahalla Red Crescent Donation Point", city: "El-Mahalla", distance: "25.0 km", group: "O+", component: "Plasma", units: 0, status: "UNAVAILABLE", verifiedAgo: "1 hour ago", fresh: true, label: "TEST DATA" }
+  ];
+
+  function renderFacilities(list) {
+    const grid = document.getElementById('facility-grid');
+    grid.innerHTML = '';
+    list.forEach(f => {
+      let badgeClass = "bg-emerald-100 text-emerald-800";
+      if (f.status === "STALE") badgeClass = "bg-amber-100 text-amber-800";
+      if (f.status === "LOW") badgeClass = "bg-orange-100 text-orange-800";
+      if (f.status === "UNAVAILABLE") badgeClass = "bg-slate-200 text-slate-700";
+
+      const staleWarning = !f.fresh ? `<p class="text-[11px] text-amber-700 font-medium mt-1">⚠ Stale inventory (>6h threshold) — Call facility before travel.</p>` : '';
+
+      grid.innerHTML += `
+        <div class="glass-card rounded-2xl p-5 flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <span class="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded">${f.label}</span>
+                <h4 class="font-bold text-slate-900 text-sm mt-1.5">${f.name}</h4>
+                <p class="text-xs text-slate-500">${f.city} • Indicative distance: ${f.distance}</p>
+              </div>
+              <span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${badgeClass}">${f.status}</span>
+            </div>
+            <div class="mt-3 p-3 rounded-xl bg-slate-50 flex items-center justify-between text-xs">
+              <span><strong>${f.group}</strong> • ${f.component}</span>
+              <span class="font-bold text-slate-800">${f.units} Units Reported</span>
+            </div>
+            <p class="text-[11px] text-slate-500 mt-2">Last verified: <strong>${f.verifiedAgo}</strong></p>
+            ${staleWarning}
+          </div>
+          <div class="flex items-center gap-2 pt-2 border-t border-slate-100">
+            <button onclick="openRequestModal('${f.name}')" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold py-2 rounded-xl transition">
+              Request Units
+            </button>
+            <button onclick="showToast('Facility phone route displayed (Privacy-protected).')" class="px-3 py-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold">
+              Call Facility
+            </button>
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  function filterFacilities() {
+    const g = document.getElementById('filter-group').value;
+    const c = document.getElementById('filter-component').value;
+    const city = document.getElementById('filter-city').value;
+    const fresh = document.getElementById('filter-freshness').value;
+
+    const filtered = facilities.filter(f => {
+      if (g !== 'ALL' && f.group !== g) return false;
+      if (c !== 'ALL' && f.component !== c) return false;
+      if (city !== 'ALL' && f.city !== city) return false;
+      if (fresh === 'FRESH' && !f.fresh) return false;
+      return true;
+    });
+    renderFacilities(filtered);
+  }
+
+  // Initial render
+  renderFacilities(facilities);
+
+  // Navigation Logic
+  const titles = {
+    'dashboard': 'Dashboard Overview',
+    'ai-doc': 'AI Clinical Documentation (Human-Reviewed)',
+    'records': 'Patient Health Record & Provenance',
+    'medications': 'Medication Schedule & Adherence',
+    'blood-bank': 'Blood Bank & Donor Coordination',
+    'audit': 'Consent Management & Audit Log'
+  };
+
+  function navigate(viewId) {
+    document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+    document.getElementById('view-' + viewId).classList.remove('hidden');
+    document.getElementById('page-title').innerText = titles[viewId];
+
+    document.querySelectorAll('.nav-item').forEach(btn => {
+      btn.classList.remove('nav-active');
+      btn.classList.add('text-slate-600');
+    });
+    const activeBtn = document.getElementById('nav-' + viewId);
+    if (activeBtn) {
+      activeBtn.classList.add('nav-active');
+      activeBtn.classList.remove('text-slate-600');
+    }
+  }
+
+  // Simulated Voice Recording
+  let isRecording = false;
+  function toggleRecording() {
+    const btn = document.getElementById('record-btn');
+    const status = document.getElementById('record-status');
+    isRecording = !isRecording;
+    if (isRecording) {
+      btn.classList.add('bg-rose-600', 'recording-pulse');
+      btn.classList.remove('bg-teal-600');
+      status.innerText = "Recording simulated audio... Click again to transcribe";
+    } else {
+      btn.classList.remove('bg-rose-600', 'recording-pulse');
+      btn.classList.add('bg-teal-600');
+      status.innerText = "Transcription complete! Please review & correct below.";
+      showToast("Whisper STT completed. Human verification required.");
+    }
+  }
+
+  function runExtractionPipeline() {
+    showToast("Running Schema Extraction + RAG + Critic Check...");
+    setTimeout(() => {
+      document.getElementById('draft-status-pill').innerText = "STATUS: DRAFT (UPDATED)";
+      showToast("Draft updated with source citations.");
+    }, 600);
+  }
+
+  function approveDraft(state) {
+    const pill = document.getElementById('draft-status-pill');
+    if (state === 'approved') {
+      pill.className = "px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800";
+      pill.innerText = "STATUS: CLINICIAN APPROVED";
+      showToast("Draft approved & saved to Patient Record with provenance.");
+    } else {
+      pill.className = "px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800";
+      pill.innerText = "STATUS: REJECTED";
+      showToast("AI Draft rejected and logged.");
+    }
+  }
+
+  // Medication Adherence Logger
+  let adherence = 86;
+  function logDose(id, status) {
+    const container = document.getElementById('med-actions-' + id);
+    let badgeColor = status === 'Taken' ? 'bg-emerald-100 text-emerald-800' : (status === 'Postponed' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800');
+    container.innerHTML = `<span class="px-3 py-1.5 rounded-lg text-xs font-bold ${badgeColor}">Logged: ${status}</span>`;
+    if (status === 'Taken' && adherence < 100) {
+      adherence += 2;
+      document.getElementById('adherence-percent').innerText = adherence + '%';
+      document.getElementById('adherence-bar').style.width = adherence + '%';
+    }
+    showToast("Dose marked as " + status + " in adherence log.");
+  }
+
+  // Role Switcher
+  function switchRole(role) {
+    const nameEl = document.getElementById('user-name');
+    const roleEl = document.getElementById('user-role-label');
+    const avatarEl = document.getElementById('user-avatar');
+    if (role === 'patient') {
+      nameEl.innerText = "Sara Mahmoud";
+      roleEl.innerText = "Patient & Opt-In Donor";
+      avatarEl.innerText = "SM";
+      navigate('records');
+    } else if (role === 'staff') {
+      nameEl.innerText = "Staff #41 (Tanta BB)";
+      roleEl.innerText = "Verified Blood-Bank Staff";
+      avatarEl.innerText = "BB";
+      navigate('blood-bank');
+    } else {
+      nameEl.innerText = "Dr. Ahmed Mansour";
+      roleEl.innerText = "Verified Clinician • Internal Med";
+      avatarEl.innerText = "DR";
+      navigate('dashboard');
+    }
+    showToast("Switched active role view to: " + role.toUpperCase());
+  }
+
+  // Bilingual Toggle (EN / AR RTL)
+  let isArabic = false;
+  function toggleLanguage() {
+    isArabic = !isArabic;
+    document.body.classList.toggle('rtl-mode', isArabic);
+    showToast(isArabic ? "تم التبديل إلى وضع العرض العربي (RTL)" : "Switched to English (LTR) layout");
+  }
+
+  // Modals & Helpers
+  function toggleMobileMenu() {
+    document.getElementById('mobile-drawer').classList.toggle('hidden');
+  }
+  function toggleNotifications() {
+    document.getElementById('notif-panel').classList.toggle('hidden');
+  }
+  function openModal(id) {
+    document.getElementById(id).classList.remove('hidden');
+  }
+  function closeModal(id) {
+    document.getElementById(id).classList.add('hidden');
+  }
+  function openRequestModal(facilityName) {
+    document.getElementById('req-facility-label').innerText = "Target Facility: " + facilityName;
+    openModal('request-modal');
+  }
+  function submitBloodRequest() {
+    closeModal('request-modal');
+    showToast("Blood request dispatched! Tracking in Request Lifecycle.");
+  }
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    document.getElementById('toast-msg').innerText = msg;
+    toast.classList.remove('hidden');
+    setTimeout(() => toast.classList.add('hidden'), 3200);
+  }
+</script>
+</body>
+</html>
